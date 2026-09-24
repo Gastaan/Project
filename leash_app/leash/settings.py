@@ -36,7 +36,7 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [],
         "APP_DIRS": True,
-        "OPTIONS": {"context_processors": ["django.template.context_processors.request"]},
+        "OPTIONS": {"context_processors": ["django.template.context_processors.request", "wallet.context.pending_count"]},
     }
 ]
 
@@ -58,6 +58,14 @@ TYPESAFE_API_KEY = os.getenv("TYPESAFE_API_KEY", "")
 TYPESAFE_BASE_URL = os.getenv("TYPESAFE_BASE_URL", "https://api.typesafe.ai")
 JEV_MODEL = os.getenv("JEV_MODEL", "jev-latest")
 JEV_TIMEOUT_SECONDS = float(os.getenv("JEV_TIMEOUT_SECONDS", "3.0"))
+
+# --- Rule writer (Claude: plain-text rules -> Q/A policy items, outside the decision path) ---
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+RULE_WRITER_MODEL = os.getenv("RULE_WRITER_MODEL", "claude-opus-5")
+RULE_WRITER_TIMEOUT_SECONDS = float(os.getenv("RULE_WRITER_TIMEOUT_SECONDS", "90"))
+# Product-image captions run inside the 8 s decision path, so they get a hard time budget.
+CAPTION_MODEL = os.getenv("CAPTION_MODEL", "claude-haiku-4-5")
+CAPTION_TIMEOUT_SECONDS = float(os.getenv("CAPTION_TIMEOUT_SECONDS", "3.0"))
 
 # --- Handler ---------------------------------------------------------------
 # Below this top probability the Handler reports review_needed instead of the argmax label.

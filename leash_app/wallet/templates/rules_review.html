@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Review rules{% endblock %}
+{% block content %}
+<h1>Review your rules</h1>
+<p class="muted">Edit anything that is not quite right and untick what you do not want. Each saved item becomes one Q/A policy that Jev scores for every purchase.</p>
+
+{% if error %}<div class="err">Your own text could not be converted: {{ error }} The suggested rules below can still be saved.</div>{% endif %}
+
+{% if unclear %}
+<div class="msg">
+  <b>Some of your text was unclear, so no rule was guessed for it:</b>
+  <ul style="margin:6px 0 0">{% for u in unclear %}<li>{{ u }}</li>{% endfor %}</ul>
+  <span class="small">Add the missing detail in the table below or go back and rewrite it.</span>
+</div>
+{% endif %}
+
+<form method="post" action="/rules/save/">{% csrf_token %}
+  <div class="scroll"><table class="stack">
+    <tr><th style="width:52px">Keep</th><th>Question</th><th>Answer</th><th style="width:26%">From</th></tr>
+    {% for it in items %}
+    <tr>
+      <td data-label="Keep"><input type="checkbox" name="keep" value="{{ forloop.counter0 }}" checked aria-label="Keep rule {{ forloop.counter }}" style="width:16px;height:16px"></td>
+      <td data-label="Question"><textarea name="question" rows="2">{{ it.question }}</textarea></td>
+      <td data-label="Answer"><textarea name="answer" rows="2">{{ it.answer }}</textarea></td>
+      <td class="small" data-label="From">
+        <span class="pill {% if it.origin == 'suggested' %}approved{% else %}pending{% endif %}">{{ it.origin }}</span>
+        {% if it.source_text %}<div class="muted" style="margin-top:6px">“{{ it.source_text }}”</div>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table></div>
+
+  <div class="card" style="margin-top:16px">
+    <label class="row"><input type="radio" name="replace" value="no" checked> Add these to my current active policies</label>
+    <label class="row" style="margin-top:6px"><input type="radio" name="replace" value="yes"> Replace my current active policies (they are switched off, not deleted)</label>
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <button class="primary" type="submit">Save policies</button>
+    <a class="btn" href="/rules/">Back</a>
+  </div>
+</form>
+{% endblock %}

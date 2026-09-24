@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Write rules{% endblock %}
+{% block content %}
+<h1>Write rules</h1>
+<p class="muted">Tell the wallet what the shopping agent may do. Pick common safeguards, write your own rules in plain words, then review the result before anything is saved. Saved rules become Q/A policies, and Jev scores every purchase against each one.</p>
+
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+<form method="post" action="/rules/draft/" enctype="multipart/form-data">{% csrf_token %}
+  <h2>Suggested rules</h2>
+  <div class="card">
+    {% for s in suggested %}
+    <label class="rule-opt">
+      <input type="checkbox" name="suggested" value="{{ s.i }}" {% if s.checked %}checked{% endif %}>
+      <span><b>{{ s.question }}</b><br><span class="muted">{{ s.answer }}</span></span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <h2>Your own rules</h2>
+  <div class="card">
+    <label for="rules-text" class="small muted">Write them the way you would tell a person. One rule per line helps, but is not required.</label>
+    <textarea name="text" id="rules-text" rows="7" placeholder="Buy our weekly groceries from Alpine Basket. No order above CHF 120 including delivery, and no more than CHF 300 in any 7 days. Never buy alcohol.">{{ text }}</textarea>
+    <label for="rules-image" class="small muted" style="display:block;margin-top:12px">Or add a photo of the exact product you want (optional, up to 5 MB). It becomes a “What may the agent buy?” rule.</label>
+    <input type="file" name="image" id="rules-image" accept="image/jpeg,image/png,image/gif,image/webp" style="margin-top:6px;max-width:100%">
+    {% if not ai_ready %}
+    <p class="small" style="color:var(--ask);margin:8px 0 0">ANTHROPIC_API_KEY is not set in leash_app/.env, so written rules and photos cannot be converted yet. Suggested rules still work.</p>
+    {% endif %}
+  </div>
+
+  <div class="row" style="margin-top:16px">
+    <button class="primary" type="submit" id="draft-btn">Turn into policies</button>
+    <span class="small muted">You will review every item next. You have {{ active_count }} active polic{{ active_count|pluralize:"y,ies" }} now.</span>
+  </div>
+</form>
+
+<style>
+.rule-opt{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;border-bottom:1px solid var(--hair);cursor:pointer}
+.rule-opt:last-child{border-bottom:0}
+.rule-opt input{margin-top:5px;width:16px;height:16px;flex:none}
+</style>
+<script>
+document.querySelector('form[action="/rules/draft/"]').addEventListener('submit', function () {
+  var b = document.getElementById('draft-btn');
+  if (document.getElementById('rules-text').value.trim() || document.getElementById('rules-image').files.length) { b.textContent = 'Reading your rules…'; }
+  b.disabled = true;
+});
+</script>
+{% endblock %}

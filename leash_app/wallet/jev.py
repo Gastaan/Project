@@ -47,11 +47,12 @@ async def system_one(client: httpx.AsyncClient, state, questions: dict, timeout:
     raise JevError("Jev rate-limited twice")
 
 
-async def _run_many(state, question_sets: dict[str, dict]) -> dict[str, dict | JevError]:
+async def _run_many(state, question_sets: dict[str, dict], states: dict | None) -> dict[str, dict | JevError]:
     names = [name for name, qs in question_sets.items() if qs]
+    states = states or {}
     async with httpx.AsyncClient() as client:
         results = await asyncio.gather(
-            *(system_one(client, state, question_sets[n]) for n in names), return_exceptions=True
+            *(system_one(client, states.get(n, state), question_sets[n]) for n in names), return_exceptions=True
         )
     out = {}
     for name, res in zip(names, results):
@@ -59,9 +60,10 @@ async def _run_many(state, question_sets: dict[str, dict]) -> dict[str, dict | J
     return out
 
 
-def evaluate_concurrently(state, question_sets: dict[str, dict]) -> dict[str, dict | JevError]:
+def evaluate_concurrently(state, question_sets: dict[str, dict], states: dict | None = None) -> dict[str, dict | JevError]:
     """Send each named question set as its own Jev request, all at the same time.
 
+    `states` optionally gives a question set its own state (e.g. only the shop's text) instead of `state`.
     Returns {name: response_dict or JevError}. Empty question sets are skipped.
     """
-    return asyncio.run(_run_many(state, question_sets))
+    return asyncio.run(_run_many(state, question_sets, states))

@@ -22,14 +22,14 @@
 
 {% if policies %}
 {% for p in policies %}<form method="post" action="/policies/{{ p.id }}/edit/" id="edit-{{ p.id }}">{% csrf_token %}</form>{% endfor %}
-<div class="scroll"><table>
+<div class="scroll"><table class="stack">
 <tr><th style="width:70px">Order</th><th>Question</th><th>Answer</th><th>Status</th><th></th></tr>
 {% for p in policies %}
 <tr {% if not p.is_active %}style="opacity:.55"{% endif %}>
-  <td><input type="text" form="edit-{{ p.id }}" name="position" value="{{ p.position }}" id="pos-{{ p.id }}" style="width:56px"></td>
-  <td><textarea form="edit-{{ p.id }}" name="question" id="q-{{ p.id }}">{{ p.question }}</textarea></td>
-  <td><textarea form="edit-{{ p.id }}" name="answer" id="a-{{ p.id }}">{{ p.answer }}</textarea></td>
-  <td><span class="pill {% if p.is_active %}approved{% else %}pending{% endif %}">{% if p.is_active %}active{% else %}off{% endif %}</span></td>
+  <td data-label="Order"><input type="text" form="edit-{{ p.id }}" name="position" value="{{ p.position }}" id="pos-{{ p.id }}" style="width:56px"></td>
+  <td data-label="Question"><textarea form="edit-{{ p.id }}" name="question" id="q-{{ p.id }}">{{ p.question }}</textarea></td>
+  <td data-label="Answer"><textarea form="edit-{{ p.id }}" name="answer" id="a-{{ p.id }}">{{ p.answer }}</textarea></td>
+  <td data-label="Status"><span class="pill {% if p.is_active %}approved{% else %}pending{% endif %}">{% if p.is_active %}active{% else %}off{% endif %}</span></td>
   <td style="white-space:nowrap">
     <button type="submit" form="edit-{{ p.id }}">Save</button>
     <form method="post" action="/policies/{{ p.id }}/toggle/" style="display:inline">{% csrf_token %}<button type="submit">{% if p.is_active %}Turn off{% else %}Turn on{% endif %}</button></form>

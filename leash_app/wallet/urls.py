@@ -11,6 +11,13 @@ urlpatterns = [
     path("policies/<int:pk>/edit/", views.policy_edit, name="policy_edit"),
     path("policies/<int:pk>/toggle/", views.policy_toggle, name="policy_toggle"),
     path("policies/<int:pk>/delete/", views.policy_delete, name="policy_delete"),
+    path("rules/", views.rules_page, name="rules_page"),
+    path("rules/draft/", views.rules_draft, name="rules_draft"),
+    path("rules/save/", views.rules_save, name="rules_save"),
+    # step-up queue
+    path("queue/", views.queue, name="queue"),
+    path("queue/items/", views.queue_items, name="queue_items"),
+    path("queue/<int:pk>/answer/", views.queue_answer, name="queue_answer"),
     # history
     path("history/", views.history_list, name="history_list"),
     path("history/<int:pk>/", views.history_detail, name="history_detail"),

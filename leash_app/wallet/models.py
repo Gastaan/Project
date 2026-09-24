@@ -79,6 +79,7 @@ class Evaluation(models.Model):
     label = models.CharField(max_length=16, choices=LABELS)
     decision = models.CharField(max_length=8, choices=DECISIONS)
     policy_scores = models.JSONField(default=list)
+    injection_score = models.FloatField(null=True)  # Jev: probability the shop's text tries to steer the decision
     reason = models.TextField(blank=True)
     jev_model = models.CharField(max_length=32, blank=True)
     jev_usage = models.JSONField(default=dict)
