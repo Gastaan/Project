@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}History{% endblock %}
+{% block content %}
+<h1>History</h1>
+<p class="muted">Every query the Handler evaluated, with Jev's probabilities (approved / rejected / review), the decision sent, and the final outcome after any customer answer.</p>
+
+<form method="get" class="card row" style="margin:16px 0">
+  <select name="label" id="f-label" style="width:auto"><option value="">any label</option>
+    <option value="approved" {% if filters.label == 'approved' %}selected{% endif %}>approved</option>
+    <option value="rejected" {% if filters.label == 'rejected' %}selected{% endif %}>rejected</option>
+    <option value="review_needed" {% if filters.label == 'review_needed' %}selected{% endif %}>review needed</option>
+  </select>
+  <select name="source" id="f-source" style="width:auto"><option value="">any source</option>
+    <option value="api" {% if filters.source == 'api' %}selected{% endif %}>API / try page</option>
+    <option value="offline" {% if filters.source == 'offline' %}selected{% endif %}>offline replay</option>
+    <option value="live" {% if filters.source == 'live' %}selected{% endif %}>live run</option>
+  </select>
+  <select name="run" id="f-run" style="width:auto"><option value="">any run</option>
+    {% for r in runs %}<option value="{{ r }}" {% if filters.run == r %}selected{% endif %}>{{ r }}</option>{% endfor %}
+  </select>
+  <input type="text" name="q" id="f-q" value="{{ filters.q }}" placeholder="merchant or authorization id" style="width:220px">
+  <button type="submit">Filter</button> <a class="btn" href="/history/">Clear</a>
+</form>
+
+{% include "history_rows.html" with rows=page.object_list %}
+
+<div class="row" style="margin-top:12px">
+  {% if page.has_previous %}<a class="btn" href="?{{ request.GET.urlencode }}&page={{ page.previous_page_number }}">Previous</a>{% endif %}
+  <span class="muted small">Page {{ page.number }} of {{ page.paginator.num_pages }} · {{ page.paginator.count }} rows</span>
+  {% if page.has_next %}<a class="btn" href="?{{ request.GET.urlencode }}&page={{ page.next_page_number }}">Next</a>{% endif %}
+</div>
+{% endblock %}

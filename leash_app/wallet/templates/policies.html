@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Policies{% endblock %}
+{% block content %}
+<h1>Policies</h1>
+<p class="muted">The customer's wallet policy as Question / Answer pairs. Only active rows are sent to Jev. Every change is logged below.</p>
+
+<div class="card" style="margin:16px 0">
+  <form method="post" action="/policies/add/" class="row" style="align-items:flex-end">{% csrf_token %}
+    <label style="flex:1 1 280px"><span class="small muted">Question</span><input type="text" name="question" id="new-q" placeholder="Which shops may the agent use?" required></label>
+    <label style="flex:1 1 280px"><span class="small muted">Answer</span><input type="text" name="answer" id="new-a" placeholder="Only shops I have bought from before." required></label>
+    <button class="primary" type="submit">Add policy</button>
+  </form>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+  <form method="post" action="/policies/preset/" class="row">{% csrf_token %}
+    <span class="small muted">Load an example set (the current active rows are switched off, not deleted):</span>
+    <select name="preset" id="preset" style="width:auto">{% for name in presets %}<option>{{ name }}</option>{% endfor %}</select>
+    <button type="submit">Load</button>
+  </form>
+</div>
+
+{% if policies %}
+{% for p in policies %}<form method="post" action="/policies/{{ p.id }}/edit/" id="edit-{{ p.id }}">{% csrf_token %}</form>{% endfor %}
+<div class="scroll"><table>
+<tr><th style="width:70px">Order</th><th>Question</th><th>Answer</th><th>Status</th><th></th></tr>
+{% for p in policies %}
+<tr {% if not p.is_active %}style="opacity:.55"{% endif %}>
+  <td><input type="text" form="edit-{{ p.id }}" name="position" value="{{ p.position }}" id="pos-{{ p.id }}" style="width:56px"></td>
+  <td><textarea form="edit-{{ p.id }}" name="question" id="q-{{ p.id }}">{{ p.question }}</textarea></td>
+  <td><textarea form="edit-{{ p.id }}" name="answer" id="a-{{ p.id }}">{{ p.answer }}</textarea></td>
+  <td><span class="pill {% if p.is_active %}approved{% else %}pending{% endif %}">{% if p.is_active %}active{% else %}off{% endif %}</span></td>
+  <td style="white-space:nowrap">
+    <button type="submit" form="edit-{{ p.id }}">Save</button>
+    <form method="post" action="/policies/{{ p.id }}/toggle/" style="display:inline">{% csrf_token %}<button type="submit">{% if p.is_active %}Turn off{% else %}Turn on{% endif %}</button></form>
+    <form method="post" action="/policies/{{ p.id }}/delete/" style="display:inline">{% csrf_token %}<button class="bad" type="submit">Delete</button></form>
+  </td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">No policies yet.</p>{% endif %}
+
+<h2>Change log</h2>
+{% if events %}
+<table><tr><th>When</th><th>Action</th><th>Q</th><th>A</th></tr>
+{% for e in events %}<tr><td class="small">{{ e.at|date:"d M H:i:s" }}</td><td><span class="pill {% if e.action == 'deleted' or e.action == 'deactivated' %}rejected{% else %}approved{% endif %}">{{ e.action }}</span></td><td>{{ e.question }}</td><td>{{ e.answer }}</td></tr>{% endfor %}
+</table>
+{% else %}<p class="muted">No changes yet.</p>{% endif %}
+{% endblock %}

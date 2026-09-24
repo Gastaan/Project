@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Wallet control</h1>
+<p class="muted">Every purchase goes to the Handler with the active Q/A policies and the earlier results. Jev answers twice at the same time: a probability for approved / rejected / review needed, and a score for each policy.</p>
+
+<div class="grid" style="margin-top:18px">
+  <div class="card"><div class="muted small">Evaluations</div><div style="font-size:28px;font-weight:600">{{ total }}</div></div>
+  <div class="card"><div class="muted small">Approved</div><div style="font-size:28px;font-weight:600">{{ counts.approved|default:0 }}</div></div>
+  <div class="card"><div class="muted small">Rejected</div><div style="font-size:28px;font-weight:600">{{ counts.rejected|default:0 }}</div></div>
+  <div class="card"><div class="muted small">Review needed</div><div style="font-size:28px;font-weight:600">{{ counts.review_needed|default:0 }}</div></div>
+</div>
+
+<div class="grid" style="margin-top:14px">
+  <div class="card">
+    <div class="muted small">Jev (TypeSafe)</div>
+    <div><span class="pill {% if jev_ready %}approved{% else %}rejected{% endif %}">{% if jev_ready %}key configured{% else %}TYPESAFE_API_KEY missing{% endif %}</span></div>
+    <div class="small muted" style="margin-top:6px">Below a top probability of {{ review_floor }} the result becomes review needed.</div>
+  </div>
+  <div class="card">
+    <div class="muted small">Viseca Leash API</div>
+    <div><span class="pill {% if leash_ready %}approved{% else %}rejected{% endif %}">{% if leash_ready %}team key configured{% else %}TEAM_API_KEY missing{% endif %}</span></div>
+    <div class="small" style="margin-top:6px"><a href="/connector/">Open the live API panel</a></div>
+  </div>
+</div>
+
+<h2>Active policies ({{ policies|length }})</h2>
+{% if policies %}
+<table><tr><th>Q</th><th>A</th></tr>
+{% for p in policies %}<tr><td>{{ p.question }}</td><td>{{ p.answer }}</td></tr>{% endfor %}
+</table>
+{% else %}<p class="muted">No active policy yet. <a href="/policies/">Add one or load an example set.</a></p>{% endif %}
+
+<h2>Latest evaluations</h2>
+{% include "history_rows.html" with rows=recent %}
+{% endblock %}

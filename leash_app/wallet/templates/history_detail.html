@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}{{ ev.source_authorization_id|default:ev.authorization_id }}{% endblock %}
+{% block content %}
+<p class="small"><a href="/history/">← History</a>{% if ev.run_id %} · run <a href="/history/?run={{ ev.run_id }}">{{ ev.run_id }}</a>{% endif %}</p>
+<h1>{{ ev.merchant_name }} · CHF {{ ev.amount_chf|floatformat:2 }}</h1>
+<p class="muted mono">{{ ev.authorization_id }} · {{ ev.scenario_id }} · simulated {{ ev.sim_timestamp|date:"D d M Y, H:i" }} · {{ ev.get_source_display }}</p>
+
+<div class="grid" style="margin-top:14px">
+  <div class="card">
+    <div class="muted small">Jev decision</div>
+    <div style="margin:4px 0 8px"><span class="pill {{ ev.label }}">{{ ev.get_label_display }}</span> → sent <span class="pill {{ ev.decision }}">{{ ev.decision }}</span></div>
+    {% if ev.p_approved is not None %}
+    <table style="border:0">
+      <tr><td>approved</td><td class="n">{{ ev.p_approved|floatformat:3 }}</td><td style="width:50%"><div class="meter"><span style="width:{% widthratio ev.p_approved 1 100 %}%;background:#0ca30c"></span></div></td></tr>
+      <tr><td>rejected</td><td class="n">{{ ev.p_rejected|floatformat:3 }}</td><td><div class="meter"><span style="width:{% widthratio ev.p_rejected 1 100 %}%;background:#d03b3b"></span></div></td></tr>
+      <tr><td>review needed</td><td class="n">{{ ev.p_review|floatformat:3 }}</td><td><div class="meter"><span style="width:{% widthratio ev.p_review 1 100 %}%;background:#fab219"></span></div></td></tr>
+    </table>
+    <div class="small muted">confidence {{ ev.confidence|floatformat:2 }} · {{ ev.jev_model }} · both Jev calls together {{ ev.latency_ms }} ms</div>
+    {% endif %}
+  </div>
+  <div class="card">
+    <div class="muted small">Outcome</div>
+    <div style="margin:4px 0 8px"><span class="pill {{ ev.outcome }}">{{ ev.outcome }}</span></div>
+    {% if ev.source == "live" %}<div class="small">Leash delivery: {{ ev.post_status|default:"not sent" }}</div>{% endif %}
+    {% if ev.resolution %}<div class="small">Customer answered <b>{{ ev.resolution }}</b> at {{ ev.resolved_at|date:"H:i:s" }} ({{ ev.resolve_status }})</div>{% endif %}
+    {% if ev.decision == "step_up" and not ev.resolution %}
+      <p class="small">This purchase is waiting for the customer.</p>
+      <form method="post" action="/connector/resolve/{{ ev.id }}/" class="row">{% csrf_token %}
+        <button class="good" name="answer" value="approve" type="submit">Customer approves</button>
+        <button class="bad" name="answer" value="decline" type="submit">Customer declines</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px"><div class="muted small">Explanation</div><p style="margin:4px 0 0">{{ ev.reason }}</p>{% if ev.error %}<p class="err small" style="margin-top:8px">{{ ev.error }}</p>{% endif %}</div>
+
+<h2>Policy scores</h2>
+{% if ev.policy_scores %}
+<div class="scroll"><table>
+<tr><th>Q</th><th>A</th><th class="n">Score (0–1)</th><th></th><th>Most likely level</th></tr>
+{% for s in ev.policy_scores %}
+<tr><td>{{ s.Q }}</td><td>{{ s.A }}</td>
+<td class="n">{% if s.score is not None %}{{ s.score|floatformat:2 }}{% else %}—{% endif %}</td>
+<td style="width:140px">{% if s.score is not None %}<div class="meter"><span style="width:{% widthratio s.score 1 100 %}%"></span></div>{% endif %}</td>
+<td class="small muted">{{ s.level|default:"" }}</td></tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">No active policies were set when this ran.</p>{% endif %}
+
+<h2>Cart</h2>
+<table><tr><th>Item</th><th>Category</th><th class="n">Qty</th><th class="n">Unit price</th><th>Merchant text (untrusted)</th></tr>
+{% for l in ev.query.authorization.items %}<tr><td>{{ l.item_name }}</td><td>{{ l.item_category }}</td><td class="n">{{ l.quantity }}</td><td class="n">{{ l.unit_price|floatformat:2 }} {{ l.currency }}</td><td class="small">{{ l.item_details }}</td></tr>{% endfor %}
+</table>
+
+{% if earlier %}
+<h2>Earlier in this run (the history Jev saw)</h2>
+{% include "history_rows.html" with rows=earlier %}
+{% endif %}
+
+<h2>State sent to Jev</h2>
+<pre>{{ state_json }}</pre>
+<details><summary>Raw query event</summary><pre>{{ query_json }}</pre></details>
+{% endblock %}

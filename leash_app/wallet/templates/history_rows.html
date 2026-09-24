@@ -1,0 +1,24 @@
+{% load humanize %}
+{% if rows %}
+<div class="scroll"><table>
+<tr><th>When (simulated)</th><th>Source</th><th>Purchase</th><th class="n">CHF</th><th>Jev probabilities</th><th>Label</th><th>Sent</th><th>Outcome</th><th class="n">ms</th></tr>
+{% for ev in rows %}
+<tr>
+  <td class="small"><a href="/history/{{ ev.id }}/">{{ ev.sim_timestamp|date:"d M H:i"|default:"—" }}</a><div class="muted mono">{{ ev.source_authorization_id|default:ev.authorization_id }}</div></td>
+  <td class="small">{{ ev.get_source_display }}</td>
+  <td>{{ ev.merchant_name }}</td>
+  <td class="n">{{ ev.amount_chf|floatformat:2 }}</td>
+  <td>{% if ev.p_approved is not None %}
+    <div class="bars" title="approved {{ ev.p_approved|floatformat:2 }} · rejected {{ ev.p_rejected|floatformat:2 }} · review {{ ev.p_review|floatformat:2 }}">
+      <span class="a" style="width:{% widthratio ev.p_approved 1 100 %}%"></span><span class="r" style="width:{% widthratio ev.p_rejected 1 100 %}%"></span><span class="v" style="width:{% widthratio ev.p_review 1 100 %}%"></span>
+    </div>
+    <div class="small muted">{{ ev.p_approved|floatformat:2 }} / {{ ev.p_rejected|floatformat:2 }} / {{ ev.p_review|floatformat:2 }}</div>
+  {% else %}<span class="small muted">Jev unavailable</span>{% endif %}</td>
+  <td><span class="pill {{ ev.label }}">{{ ev.get_label_display }}</span></td>
+  <td><span class="pill {{ ev.decision }}">{{ ev.decision }}</span></td>
+  <td><span class="pill {{ ev.outcome }}">{{ ev.outcome }}</span></td>
+  <td class="n small">{{ ev.latency_ms }}</td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">Nothing evaluated yet. Try a purchase or run <code>python manage.py replay_offline SCEN0001</code>.</p>{% endif %}

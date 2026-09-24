@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Try a purchase{% endblock %}
+{% block content %}
+<h1>Try a purchase</h1>
+<p class="muted">Send one purchase through the Handler with the currently active policies. The result opens in the history viewer.</p>
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+<div class="grid" style="margin-top:16px">
+  <form method="post" class="card">{% csrf_token %}
+    <h2 style="margin-top:0">From the challenge data</h2>
+    <p class="small muted">Builds a live-shaped event from <code>purchase_attempts.csv</code> for the chosen attempt.</p>
+    <select name="attempt" id="attempt" required>
+      {% for au, scen, n in attempts %}<option value="{{ au }}">{{ scen }} #{{ n }} · {{ au }}</option>{% endfor %}
+    </select>
+    <div style="margin-top:10px"><button class="primary" type="submit">Evaluate</button></div>
+  </form>
+
+  <form method="post" class="card">{% csrf_token %}
+    <h2 style="margin-top:0">Paste an event</h2>
+    <p class="small muted">An <code>authorization.request</code> event, or a whole poll envelope with the event under <code>data</code>.</p>
+    <textarea name="event_json" id="event_json" style="min-height:220px" class="mono" placeholder='{"type": "authorization.request", "authorization": {...}}' required></textarea>
+    <div style="margin-top:10px"><button class="primary" type="submit">Evaluate</button></div>
+  </form>
+</div>
+{% endblock %}

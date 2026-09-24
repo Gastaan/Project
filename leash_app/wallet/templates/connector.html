@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Live API{% endblock %}
+{% block content %}
+<h1>Live Leash API</h1>
+<p class="muted">Viseca's sandbox. Flow: draft a mandate (scenario instruction + active Q/A policies) → the customer confirms → start a run → the worker (<code>python manage.py leash_worker</code>) answers every purchase → the customer answers step-ups here.</p>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+{% if boot %}
+<div class="grid" style="margin-top:14px">
+  <div class="card"><div class="muted small">Team</div><b>{{ boot.team_id }}</b><div class="small muted">API {{ boot.api_version }} · pack {{ boot.pack_version }}</div></div>
+  <div class="card"><div class="muted small">Time limits</div><div class="small">decision {{ boot.limits.decision_timeout_seconds }} s · customer {{ boot.limits.step_up_timeout_seconds }} s · poll {{ boot.limits.long_poll_max_seconds }} s</div></div>
+  <div class="card"><div class="muted small">Team reset</div><div class="small">{% if boot.features.reset %}enabled{% else %}disabled: runs cannot be wiped{% endif %}</div></div>
+</div>
+
+<h2>1 · Draft a mandate</h2>
+<form method="post" action="/connector/mandates/draft/" class="card row">{% csrf_token %}
+  <select name="scenario_id" id="scenario_id" style="width:auto">
+    {% for s in boot.scenarios %}<option value="{{ s.scenario_id }}">{{ s.scenario_id }} · {{ s.scenario_name }} ({{ s.event_count }})</option>{% endfor %}
+  </select>
+  <span class="small muted">Guidance = {{ policies|length }} active Q/A polic{{ policies|length|pluralize:"y,ies" }}</span>
+  <button class="primary" type="submit">Create draft</button>
+</form>
+{% endif %}
+
+<h2>2 · Mandates</h2>
+{% if mandates %}
+<div class="scroll"><table>
+<tr><th>Scenario</th><th>Draft / mandate</th><th>Status</th><th>Instruction and guidance</th><th></th></tr>
+{% for m in mandates %}
+<tr>
+  <td>{{ m.scenario_id }}</td>
+  <td class="mono small">{{ m.draft_id }}<br>{{ m.mandate_id|default:"—" }}</td>
+  <td><span class="pill {% if m.status == 'active' %}approved{% elif m.status == 'revoked' %}rejected{% else %}pending{% endif %}">{{ m.status }}</span></td>
+  <td class="small">“{{ m.instruction }}”<ul style="margin:6px 0 0;padding-left:18px">{% for g in m.guidance %}<li>{{ g }}</li>{% endfor %}</ul></td>
+  <td style="white-space:nowrap">
+    {% if m.status == "draft" %}<form method="post" action="/connector/mandates/{{ m.id }}/confirm/">{% csrf_token %}<button class="good" type="submit">Customer confirms</button></form>{% endif %}
+    {% if m.status == "active" %}
+      <form method="post" action="/connector/mandates/{{ m.id }}/run/" style="margin-bottom:6px">{% csrf_token %}
+        <label class="small"><input type="checkbox" name="sure" value="yes" id="sure-{{ m.id }}"> start a live run</label>
+        <button class="primary" type="submit">Start run</button></form>
+      <form method="post" action="/connector/mandates/{{ m.id }}/revoke/">{% csrf_token %}<button class="bad" type="submit">Revoke</button></form>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</table></div>
+{% else %}<p class="muted">No mandate created from this app yet.</p>{% endif %}
+
+<h2>3 · Runs</h2>
+{% if runs %}
+<table><tr><th>Run</th><th>Scenario</th><th>Last known status</th><th></th></tr>
+{% for r in runs %}<tr><td class="mono small"><a href="/history/?run={{ r.run_id }}">{{ r.run_id }}</a></td><td>{{ r.scenario_id }}</td><td class="mono small">{{ r.last_status }}</td>
+<td><form method="post" action="/connector/runs/{{ r.id }}/refresh/">{% csrf_token %}<button type="submit">Refresh</button></form></td></tr>{% endfor %}
+</table>
+{% else %}<p class="muted">No run started from this app yet.</p>{% endif %}
+
+<h2>4 · Waiting for the customer ({{ pending|length }})</h2>
+{% if pending %}
+<table><tr><th>Purchase</th><th>Why</th><th></th></tr>
+{% for ev in pending %}<tr>
+  <td><a href="/history/{{ ev.id }}/">{{ ev.merchant_name }} · CHF {{ ev.amount_chf|floatformat:2 }}</a><div class="small muted">{{ ev.get_source_display }} · {{ ev.source_authorization_id }}</div></td>
+  <td class="small">{{ ev.reason }}</td>
+  <td style="white-space:nowrap"><form method="post" action="/connector/resolve/{{ ev.id }}/" class="row">{% csrf_token %}
+    <input type="hidden" name="next" value="/connector/">
+    <button class="good" name="answer" value="approve" type="submit">Approve</button>
+    <button class="bad" name="answer" value="decline" type="submit">Decline</button></form></td>
+</tr>{% endfor %}
+</table>
+{% else %}<p class="muted">Nothing is waiting.</p>{% endif %}
+{% endblock %}
